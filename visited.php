@@ -1,8 +1,8 @@
 <?php
 
 // filename
-$json_filename = '/var/www/traviskentbeste.com/public/mnstateparks/visited.json';
-$js_filename = '/var/www/traviskentbeste.com/public/mnstateparks/visited.js';
+$json_filename = '/var/www/html/traviskentbeste.com/www/public/mn-state-parks/data/visited.json';
+$js_filename = '/var/www/html/traviskentbeste.com/www/public/mn-state-parks/data/visited.js';
 
 // input
 $id = $_POST['id'];	

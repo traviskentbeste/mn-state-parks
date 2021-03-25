@@ -22,9 +22,15 @@ use HTTP::Cookies;
 use Crypt::SSLeay;
 use WWW::Mechanize ();
 use JSON qw( decode_json );
+use File::Path qw(make_path);
 
+my $debug = 0;
 my $user_agent    = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36';
 my $dataDirectory = './data';
+
+if (! -e $dataDirectory) {
+	make_path($dataDirectory);
+}
 
 # Create page parser object
 my $page_p        = HTML::Parser->new(
@@ -67,58 +73,34 @@ my $response = $mech->get($url_string);
 #exit;
 
 my $gatherData = 0;
-my $urls = {};
+my @parks = ();
 
 # parse the response for the links
 $page_p->parse($response->decoded_content());
 
-# parse the urls
-foreach my $url (keys %$urls) {
-	$url =~ /state_parks\/(.*)\//;
+print "there were " . scalar(@parks) . " parks found\n";
 
-	my $park = $1;
+# parse the parks
+my $i = 0;
+foreach my $obj (@parks) {
 
-	print "processing data for $park...";
+	#print Dumper $obj;
 
-	my $url_string = 'https://www.dnr.state.mn.us' . $url;
-	#print $url_string . "\n";
+	my $name = $obj->{'name'};
+	my $url  = $obj->{'url'};
+	$url =~ /=(.*)#/;
+	my $id = $1 || '';
 
-	my $response = $mech->get($url_string);
-	my @redirects = $response->redirects;
+	print "processing data for $name...";
 
-	if (scalar(@redirects)) {
-		my $redirect = $redirects[-1]->header('Location');
-		$redirect =~ /id=(.*)$/;
-		my $id = $1;
+	#print "\n";
+	#print "url : $url...";
+	#print "id  : $id\n";
+
+	if ($id ne '') {
+
 		my $time = time();
-		$url_string = 'https://maps1.dnr.state.mn.us/cgi-bin/compass/feature_detail.cgi?callback=foo&id=' . $id . '&_=' . $time ;
-
-		my $debug = 0;
-		if ($debug) {
-			print "\n";
-			print "request uri     : " . $redirects[-1]->request->uri . "\n";
-			print "location header : " . $redirects[-1]->header('Location') . "\n";
-			print "redirect        : $redirect\n";
-			print "id              : $id\n";
-			print "time            : $time\n";
-			print "url_string      : $url_string\n";
-		}
-	
-		# always print the id
-		print "$id...";
-
-		# parse the response for the links
-		if (-e $dataDirectory . '/' . $id . '.json') {
-			print "error!\n";
-			print "request uri     : " . $redirects[-1]->request->uri . "\n";
-			print "location header : " . $redirects[-1]->header('Location') . "\n";
-			print "redirect        : $redirect\n";
-			print "id              : $id\n";
-			print "time            : $time\n";
-			print "url_string      : $url_string\n";
-			exit;
-		}
-
+		my $url_string = 'https://maps1.dnr.state.mn.us/cgi-bin/compass/feature_detail.cgi?callback=foo&id=' . $id . '&_=' . $time ;
 		$response = $mech->get($url_string);
 		my $string = $response->decoded_content();
 		$string =~ s/foo\(//; # remove the foo
@@ -131,11 +113,14 @@ foreach my $url (keys %$urls) {
 		print FP $string;
 		close(FP);
 
+		print "success\n";
+
 	} else {
-		#print "ignored $url_string\n";
+
+		print "error\n";
+
 	}
 
-	print "done\n";
 }
 
 #----------------------------------------#
@@ -155,9 +140,16 @@ sub page_start {
 	if ($gatherData) {
 		if ($tagname eq 'a') {
 			if (defined($attr->{'href'})) {
-				#print "$text\n";
-				#print $attr->{'href'} . "\n";
-				$urls->{$attr->{'href'}}++;
+
+				if ($debug == 1) {
+					print "page_start : text : $text\n";
+				}
+
+				my $obj = { "url" => $attr->{'href'}, "name" => "" };
+				push(@parks, $obj);
+
+				#print "attr->{'href'} : " . $attr->{'href'} . "\n";
+
 			}
 		}
 	}
@@ -172,6 +164,9 @@ sub page_end {
 	my $tagname = shift;
 
 	if ($tagname eq 'table') {
+		if ($debug == 1) {
+			print "end of table\n";
+		}
 		$gatherData = 0;
 	}
 }
@@ -184,7 +179,16 @@ sub page_default {
 	my $text    = shift;
 
 	if ($gatherData) {
-		#print $text . ' -> ' . "\n";
+		my $index = $#parks;
+
+		if ($debug == 1) {
+			print "page_default : at index $index " . $text . ' -> ' . "\n";
+		}
+
+		# add the park name, note, this comes after the 'page_start' of the tag
+		my $obj = $parks[$index];
+		$obj->{'name'} = $text;
+		$parks[$index] = $obj;
 	}
 
 }

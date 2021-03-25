@@ -4,8 +4,8 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>MN State Parkse</title>
-		<script src="/js/jquery-3.4.1.min.js"></script>
-		<script src="/mnstateparks/visited.js?_<?php echo time(); ?>"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="/mn-state-parks/data/visited.js?_<?php echo time(); ?>"></script>
     <style>
       /* Always set the map height explicitly to define the size of the div
        * element that contains the map. */
@@ -39,10 +39,10 @@ function markAsVisited(id, index) {
 
 	$.ajax({
 		type: "POST",
-		url: '/mnstateparks/visited.php',
+		url: '/mn-state-parks/visited.php',
 		data: data,
 		success: function(response) {
-			//console.log(response);
+			console.log(response);
 			var marker = markers[index];
 			if (response.status == 'ok') {
 				if (response.data.visited == 1) {
@@ -73,7 +73,7 @@ function initMap() {
 	// Create a <script> tag and set the URL as the source.
 	var script = document.createElement('script');
 	var time = new Date().getTime();
-	script.src = '/mnstateparks/data.js?_=' + time;
+	script.src = '/mn-state-parks/data/data.js?_=' + time;
 	document.getElementsByTagName('head')[0].appendChild(script);
 
 	// add home marker
@@ -238,7 +238,7 @@ window.data_callback = function(results) {
 
 		content    += '<tr>';
 		content    += '<td>&nbsp;</td>';
-		content    += '<td><button onClick="markAsVisited(\'' + results[i].id + '\', ' + i + ');">visited</button></td>';
+		content    += '<td><button onClick="markAsVisited(\'' + results[i].id + '\', ' + i + ');">mark as visited</button></td>';
 		content    += '</tr>';
 
 		var iconUrl = "http://maps.google.com/mapfiles/ms/icons/red-dot.png";

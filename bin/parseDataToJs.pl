@@ -18,9 +18,9 @@ my $help = 0;
 my $dataDirectory = './data';
 GetOptions (
 	"data-directory=s" => \$dataDirectory,
-	"help"  => \$help,
-	"verbose"  => \$verbose,
-	"debug"  => \$debug
+	"help" => \$help,
+	"verbose" => \$verbose,
+	"debug" => \$debug
 ) or die("Error in command line arguments\n");
 
 #print "dataDirectory : $dataDirectory\n";
